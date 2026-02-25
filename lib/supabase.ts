@@ -7,6 +7,7 @@ export const supabase = url && anonKey ? createClient(url, anonKey) : null;
 
 export type SavedCandidate = {
   id: string;
+  owner_id: string;
   login: string;
   github_id: string;
   display_name: string | null;

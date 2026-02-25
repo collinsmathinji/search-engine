@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { SavedCandidate } from '@/lib/supabase';
+import { pipelineOwnerHeaders } from '@/lib/pipeline-owner-client';
 
 const GITHUB_URL = (login: string) => `https://github.com/${login}`;
 
@@ -57,7 +58,7 @@ export default function PipelinePage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/pipeline');
+      const res = await fetch('/api/pipeline', { headers: pipelineOwnerHeaders() });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || 'Failed to load pipeline');
@@ -87,7 +88,7 @@ export default function PipelinePage() {
     try {
       const res = await fetch(`/api/pipeline/${encodeURIComponent(editingLogin)}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...pipelineOwnerHeaders() },
         body: JSON.stringify({
           notes: editNotes,
           tags: editTags.split(',').map((t) => t.trim()).filter(Boolean),
@@ -103,7 +104,10 @@ export default function PipelinePage() {
 
   const remove = async (login: string) => {
     try {
-      const res = await fetch(`/api/pipeline/${encodeURIComponent(login)}`, { method: 'DELETE' });
+      const res = await fetch(`/api/pipeline/${encodeURIComponent(login)}`, {
+        method: 'DELETE',
+        headers: pipelineOwnerHeaders(),
+      });
       if (!res.ok) throw new Error('Delete failed');
       setCandidates((prev) => prev.filter((c) => c.login !== login));
       setEditingLogin((l) => (l === login ? null : l));

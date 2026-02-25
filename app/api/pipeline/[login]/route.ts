@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { getPipelineOwnerId } from '@/lib/pipeline-owner';
 
 export async function PATCH(
   req: NextRequest,
@@ -13,6 +14,7 @@ export async function PATCH(
       }, { status: 503 });
     }
     const { login } = await params;
+    const ownerId = getPipelineOwnerId(req);
     const db = supabase;
     const body = await req.json();
     const { notes, tags } = body;
@@ -21,7 +23,13 @@ export async function PATCH(
     if (notes !== undefined) updates.notes = notes;
     if (tags !== undefined) updates.tags = Array.isArray(tags) ? tags : [];
 
-    const { data, error } = await db.from('saved_candidates').update(updates).eq('login', login).select().single();
+    const { data, error } = await db
+      .from('saved_candidates')
+      .update(updates)
+      .eq('owner_id', ownerId)
+      .eq('login', login)
+      .select()
+      .single();
     if (error) throw error;
     return NextResponse.json(data);
   } catch (err: unknown) {
@@ -34,7 +42,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ login: string }> }
 ) {
   try {
@@ -45,8 +53,13 @@ export async function DELETE(
       }, { status: 503 });
     }
     const { login } = await params;
+    const ownerId = getPipelineOwnerId(req);
     const db = supabase;
-    const { error } = await db.from('saved_candidates').delete().eq('login', login);
+    const { error } = await db
+      .from('saved_candidates')
+      .delete()
+      .eq('owner_id', ownerId)
+      .eq('login', login);
     if (error) throw error;
     return NextResponse.json({ ok: true });
   } catch (err: unknown) {

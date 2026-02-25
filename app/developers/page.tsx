@@ -7,6 +7,7 @@ import { ApiErrorAlert } from '@/components/ApiErrorAlert';
 import { FeatureUnavailableBanner } from '@/components/FeatureUnavailableBanner';
 import { DEFAULT_SCORE_WEIGHTS, type DeveloperSearchHit, type ScoreWeights } from '@/lib/types';
 import type { DeveloperFeaturesUnavailable } from '@/lib/features-unavailable';
+import { pipelineOwnerHeaders } from '@/lib/pipeline-owner-client';
 
 type ViewMode = 'cards' | 'table';
 
@@ -93,7 +94,7 @@ export default function DevelopersPage() {
     try {
       const res = await fetch('/api/pipeline', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...pipelineOwnerHeaders() },
         body: JSON.stringify({
           login: user.login,
           github_id: user.githubId,
@@ -128,7 +129,10 @@ export default function DevelopersPage() {
     next.delete(login);
     setSavedLogins(next);
     localStorage.setItem('bountylab_saved_developers', JSON.stringify([...next]));
-    fetch(`/api/pipeline/${encodeURIComponent(login)}`, { method: 'DELETE' }).catch(() => {});
+    fetch(`/api/pipeline/${encodeURIComponent(login)}`, {
+      method: 'DELETE',
+      headers: pipelineOwnerHeaders(),
+    }).catch(() => {});
   }, [savedLogins]);
 
   const loadMore = () => {

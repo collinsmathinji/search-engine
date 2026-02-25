@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { getPipelineOwnerId } from '@/lib/pipeline-owner';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     if (!supabase) {
       return NextResponse.json([]);
     }
-    const { data, error } = await supabase.from('saved_candidates').select('*').order('created_at', { ascending: false });
+    const ownerId = getPipelineOwnerId(req);
+    const { data, error } = await supabase
+      .from('saved_candidates')
+      .select('*')
+      .eq('owner_id', ownerId)
+      .order('created_at', { ascending: false });
     if (error) throw error;
     return NextResponse.json(data ?? []);
   } catch (err: unknown) {
@@ -51,10 +57,12 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
+    const ownerId = getPipelineOwnerId(req);
     const { data, error } = await db
       .from('saved_candidates')
       .upsert(
         {
+          owner_id: ownerId,
           login,
           github_id,
           display_name: display_name ?? null,
@@ -70,7 +78,7 @@ export async function POST(req: NextRequest) {
           tags: Array.isArray(tags) ? tags : [],
           updated_at: new Date().toISOString(),
         },
-        { onConflict: 'login', ignoreDuplicates: false }
+        { onConflict: 'owner_id,login', ignoreDuplicates: false }
       )
       .select()
       .single();
