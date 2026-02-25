@@ -177,30 +177,35 @@ input, select, textarea {
   }
 }
 
-/* Header — BountyBot: green for active/CTA, black outline for secondary */
+/* Header — clear hierarchy: brand | nav (current page) | CTA */
 .header {
   position: sticky;
   top: 0;
   z-index: 50;
   background: var(--color-surface);
   border-bottom: 2px solid var(--color-border);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
 }
 
 .header__inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 3.5rem;
+  gap: var(--space-6);
+  min-height: 3.75rem;
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-2);
 }
 
 .header__brand {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 1rem;
   color: var(--color-text);
   text-decoration: none;
+  flex-shrink: 0;
 }
 
 .header__brand:hover {
@@ -212,23 +217,32 @@ input, select, textarea {
   color: var(--color-accent);
 }
 
+.header__brand-muted {
+  color: var(--color-text-muted);
+}
+
 .header__nav {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: 0;
+  flex: 1;
+  justify-content: center;
 }
 
 .header__link {
-  padding: var(--space-2) var(--space-3);
-  font-size: 0.8125rem;
-  font-weight: 500;
+  padding: var(--space-2) var(--space-4);
+  font-size: 0.75rem;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--color-text);
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
   text-decoration: none;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
   border-radius: var(--radius);
+  margin-bottom: -2px;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
 }
 
 .header__link:hover {
@@ -238,9 +252,39 @@ input, select, textarea {
 }
 
 .header__link--active {
-  border-color: var(--color-accent);
   color: var(--color-accent);
-  background: var(--color-surface);
+  background: var(--color-accent-subtle);
+  border-bottom-color: var(--color-accent);
+}
+
+.header__actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.header__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2) var(--space-5);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-surface);
+  background: var(--color-accent);
+  border: 2px solid var(--color-accent);
+  border-radius: var(--radius);
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.header__cta:hover {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+  color: var(--color-surface);
+  text-decoration: none;
 }
 
 /* Primary: green (BountyBot "Earn" = outline in header; solid in content) */
