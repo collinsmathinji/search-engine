@@ -23,36 +23,54 @@ export async function GET(req: NextRequest) {
       maxResults,
       after,
       enablePagination: true,
-      includeAttributes: {
-        contributors: { first: 10 },
-        owner: true,
-      },
       ...(filters.length > 0 && { filters: { filters, op: 'And' as const } }),
     };
 
-    if (naturalLanguage && query) {
-      const response = await client.searchRepos.naturalLanguage({
-        query,
-        ...baseParams,
+    const runSearch = (includeAttributes: Record<string, unknown>) => {
+      const params = { ...baseParams, includeAttributes };
+      if (naturalLanguage && query) {
+        return client.searchRepos.naturalLanguage({ query, ...params });
+      }
+      return client.searchRepos.search({ query: query || null, ...params });
+    };
+
+    try {
+      const response = await runSearch({
+        contributors: { first: 10 },
+        owner: true,
       });
+      if (naturalLanguage && query) {
+        return NextResponse.json({
+          count: response.count,
+          repositories: response.repositories ?? [],
+          pageInfo: response.pageInfo,
+          searchQuery: (response as { searchQuery?: string }).searchQuery,
+        });
+      }
       return NextResponse.json({
         count: response.count,
         repositories: response.repositories ?? [],
         pageInfo: response.pageInfo,
-        searchQuery: response.searchQuery,
       });
+    } catch (firstErr: unknown) {
+      if ((firstErr as { status?: number })?.status === 403) {
+        const response = await runSearch({});
+        if (naturalLanguage && query) {
+          return NextResponse.json({
+            count: response.count,
+            repositories: response.repositories ?? [],
+            pageInfo: response.pageInfo,
+            searchQuery: (response as { searchQuery?: string }).searchQuery,
+          });
+        }
+        return NextResponse.json({
+          count: response.count,
+          repositories: response.repositories ?? [],
+          pageInfo: response.pageInfo,
+        });
+      }
+      throw firstErr;
     }
-
-    const response = await client.searchRepos.search({
-      query: query || null,
-      ...baseParams,
-    });
-
-    return NextResponse.json({
-      count: response.count,
-      repositories: response.repositories ?? [],
-      pageInfo: response.pageInfo,
-    });
   } catch (err: unknown) {
     const { body, status } = formatApiError(err);
     return NextResponse.json(body, { status });

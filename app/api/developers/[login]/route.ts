@@ -16,17 +16,27 @@ export async function GET(
     }
 
     const client = getBountylabClient();
-    const response = await client.rawUsers.byLogin({
-      logins: [login],
-      includeAttributes: {
+
+    const fetchUser = (includeAttributes: Record<string, unknown>) =>
+      client.rawUsers.byLogin({ logins: [login], includeAttributes });
+
+    let response: Awaited<ReturnType<typeof fetchUser>>;
+    try {
+      response = await fetchUser({
         aggregates: true,
         devrank: true,
         contributes: { first: 10 },
         followers: { first: 1 },
         owns: { first: 10 },
         stars: { first: 5 },
-      },
-    });
+      });
+    } catch (firstErr: unknown) {
+      if ((firstErr as { status?: number })?.status === 403) {
+        response = await fetchUser({});
+      } else {
+        throw firstErr;
+      }
+    }
 
     const user = response.users?.[0] ?? null;
     if (!user) {

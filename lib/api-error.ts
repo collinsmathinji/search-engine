@@ -72,7 +72,10 @@ export function formatApiError(err: unknown): { body: ApiErrorResponse; status: 
       userMessage = 'Your API key is missing or invalid. Please check your setup.';
       break;
     case 403:
-      userMessage = "You don't have permission to use this feature. Check your plan or API key.";
+      // Show the API's own message when present (e.g. "SEARCH service not enabled") so users with credits see the real restriction
+      userMessage = typeof rawMessage === 'string' && rawMessage.length > 0 && rawMessage !== 'Forbidden'
+        ? rawMessage
+        : "You don't have permission to use this feature. Your plan may not include developer search — check your BountyLab account or API key.";
       break;
     case 404:
       userMessage = "We couldn't find what you're looking for.";
