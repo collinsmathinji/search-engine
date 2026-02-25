@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { ApiErrorAlert } from '@/components/ApiErrorAlert';
 
 const GITHUB_AVATAR = (login: string) => `https://github.com/${login}.png`;
 
@@ -44,22 +45,23 @@ export default function DeveloperProfilePage() {
   const login = typeof params.login === 'string' ? params.login : '';
   const [user, setUser] = useState<ProfileUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [errorData, setErrorData] = useState<{ error?: string; userMessage?: string; resetsAt?: string } | null>(null);
 
   const fetchProfile = useCallback(async () => {
     if (!login) return;
     setLoading(true);
-    setError(null);
+    setErrorData(null);
     try {
       const res = await fetch(`/api/developers/${encodeURIComponent(login)}`);
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Not found');
+        setErrorData(data);
+        setUser(null);
+        return;
       }
-      const data = await res.json();
       setUser(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load profile');
+      setErrorData({ error: e instanceof Error ? e.message : 'Failed to load profile' });
       setUser(null);
     } finally {
       setLoading(false);
@@ -78,11 +80,15 @@ export default function DeveloperProfilePage() {
     );
   }
 
-  if (error || !user) {
+  if (errorData || !user) {
     return (
       <div className="container container--narrow page">
         <div className="card card--padded text-center">
-          <p style={{ color: 'var(--color-danger)' }}>{error || 'User not found'}</p>
+          {errorData ? (
+            <ApiErrorAlert data={errorData} fallback="Could not load this profile." />
+          ) : (
+            <p style={{ color: 'var(--color-danger)' }}>User not found</p>
+          )}
           <Link href="/developers" className="mt-4 inline-block">
             ← Back to search
           </Link>

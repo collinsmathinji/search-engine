@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { RepoCard } from '@/components/RepoCard';
+import { ApiErrorAlert } from '@/components/ApiErrorAlert';
 import type { RepoSearchHit } from '@/lib/types';
 
 export default function ReposPage() {
@@ -11,13 +12,13 @@ export default function ReposPage() {
   const [minStars, setMinStars] = useState('');
   const [repos, setRepos] = useState<RepoSearchHit[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errorData, setErrorData] = useState<{ error?: string; userMessage?: string; resetsAt?: string } | null>(null);
   const [pageInfo, setPageInfo] = useState<{ endCursor?: string; hasNextPage?: boolean } | null>(null);
 
   const search = useCallback(
     async (cursor?: string) => {
       setLoading(true);
-      setError(null);
+      setErrorData(null);
       try {
         const params = new URLSearchParams();
         if (query) params.set('q', query);
@@ -27,11 +28,12 @@ export default function ReposPage() {
         if (cursor) params.set('after', cursor);
         params.set('maxResults', '20');
         const res = await fetch(`/api/repos/search?${params}`);
+        const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          throw new Error(data.error || 'Search failed');
+          setErrorData(data);
+          if (!cursor) setRepos([]);
+          return;
         }
-        const data = await res.json();
         if (cursor) {
           setRepos((prev) => [...prev, ...(data.repositories ?? [])]);
         } else {
@@ -39,7 +41,7 @@ export default function ReposPage() {
         }
         setPageInfo(data.pageInfo ?? null);
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Search failed');
+        setErrorData({ error: e instanceof Error ? e.message : 'Search failed' });
         if (!cursor) setRepos([]);
       } finally {
         setLoading(false);
@@ -108,7 +110,9 @@ export default function ReposPage() {
         </div>
       </div>
 
-      {error && <div className="alert alert--error mt-4">{error}</div>}
+      {errorData && (
+        <ApiErrorAlert data={errorData} fallback="Search failed." className="mt-4" />
+      )}
 
       {loading && repos.length === 0 && (
         <div className="text-center text-muted mt-6" style={{ padding: '3rem 0' }}>
@@ -116,7 +120,7 @@ export default function ReposPage() {
         </div>
       )}
 
-      {!loading && repos.length === 0 && !error && query && (
+      {!loading && repos.length === 0 && !errorData && query && (
         <div className="text-center text-muted mt-6" style={{ padding: '3rem 0' }}>
           No repositories found. Try a different query.
         </div>

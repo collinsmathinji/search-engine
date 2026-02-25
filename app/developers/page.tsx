@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { DeveloperCard } from '@/components/DeveloperCard';
 import { ScoreWeightsSlider } from '@/components/ScoreWeights';
+import { ApiErrorAlert } from '@/components/ApiErrorAlert';
 import { DEFAULT_SCORE_WEIGHTS, type DeveloperSearchHit, type ScoreWeights } from '@/lib/types';
 
 type ViewMode = 'cards' | 'table';
@@ -14,7 +15,7 @@ export default function DevelopersPage() {
   const [emailDomain, setEmailDomain] = useState('');
   const [users, setUsers] = useState<DeveloperSearchHit[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errorData, setErrorData] = useState<{ error?: string; userMessage?: string; resetsAt?: string } | null>(null);
   const [pageInfo, setPageInfo] = useState<{ endCursor?: string; hasNextPage?: boolean } | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('cards');
   const [scoreWeights, setScoreWeights] = useState<ScoreWeights>(DEFAULT_SCORE_WEIGHTS);
@@ -26,7 +27,7 @@ export default function DevelopersPage() {
   const search = useCallback(
     async (cursor?: string) => {
       setLoading(true);
-      setError(null);
+      setErrorData(null);
       try {
         const params = new URLSearchParams();
         if (query) params.set('q', query);
@@ -36,11 +37,12 @@ export default function DevelopersPage() {
         if (cursor) params.set('after', cursor);
         params.set('maxResults', '20');
         const res = await fetch(`/api/developers/search?${params}`);
+        const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          throw new Error(data.error || res.statusText);
+          setErrorData(data);
+          if (!cursor) setUsers([]);
+          return;
         }
-        const data = await res.json();
         if (cursor) {
           setUsers((prev) => [...prev, ...(data.users ?? [])]);
         } else {
@@ -48,7 +50,7 @@ export default function DevelopersPage() {
         }
         setPageInfo(data.pageInfo ?? null);
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Search failed');
+        setErrorData({ error: e instanceof Error ? e.message : 'Search failed' });
         if (!cursor) setUsers([]);
       } finally {
         setLoading(false);
@@ -230,7 +232,9 @@ export default function DevelopersPage() {
             </div>
           </div>
 
-          {error && <div className="alert alert--error">{error}</div>}
+          {errorData && (
+            <ApiErrorAlert data={errorData} fallback="Search failed." className="mt-4" />
+          )}
           {saveError && <div className="alert alert--warning">{saveError}</div>}
 
           {loading && users.length === 0 && (
@@ -239,7 +243,7 @@ export default function DevelopersPage() {
             </div>
           )}
 
-          {!loading && users.length === 0 && !error && query && (
+          {!loading && users.length === 0 && !errorData && query && (
             <div className="text-center text-muted mt-6" style={{ padding: '3rem 0' }}>
               No results. Try a different query or filters.
             </div>

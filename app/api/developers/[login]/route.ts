@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getBountylabClient } from '@/lib/bountylab';
+import { formatApiError } from '@/lib/api-error';
 
 export async function GET(
   _req: NextRequest,
@@ -31,8 +32,7 @@ export async function GET(
 
     return NextResponse.json(user);
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to fetch user';
-    const status = (err as { status?: number })?.status ?? 500;
-    return NextResponse.json({ error: message }, { status: status >= 400 ? status : 500 });
+    const { body, status } = formatApiError(err);
+    return NextResponse.json(body, { status });
   }
 }
