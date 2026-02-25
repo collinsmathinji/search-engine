@@ -1,5 +1,5 @@
 /**
- * BountyLab API error body (e.g. 429 CREDITS_EXHAUSTED).
+ * BountyLab API error body (e.g. 429 CREDITS_EXHAUSTED, 401, etc.).
  */
 interface BountyLabErrorBody {
   error?: string;
@@ -7,7 +7,7 @@ interface BountyLabErrorBody {
   details?: { resetsAt?: string; organizationId?: string };
 }
 
-interface ApiErrorResponse {
+export interface ApiErrorResponse {
   error: string;
   code?: string;
   resetsAt?: string;
@@ -17,16 +17,19 @@ interface ApiErrorResponse {
 
 /**
  * Format a caught BountyLab/API error into a response shape with a user-friendly message.
- * Call from API route catch blocks and return NextResponse.json(..., { status }).
+ * Only shows "quota reset" when we actually receive 429 with CREDITS_EXHAUSTED.
  */
 export function formatApiError(err: unknown): { body: ApiErrorResponse; status: number } {
   const status = (err as { status?: number })?.status ?? 500;
   const body = (err as { error?: BountyLabErrorBody })?.error as BountyLabErrorBody | undefined;
-  const code = body?.code ?? (err as Error)?.message?.includes('CREDITS') ? 'CREDITS_EXHAUSTED' : undefined;
   const rawMessage = body?.error ?? (err instanceof Error ? err.message : 'Something went wrong');
 
-  // Credit limit exceeded — friendly message and when it resets
-  if (status === 429 || code === 'CREDITS_EXHAUSTED') {
+  // Only treat as credit limit when we have 429 AND the API body says so (code or resetsAt)
+  const isCreditsExhausted =
+    status === 429 &&
+    (body?.code === 'CREDITS_EXHAUSTED' || body?.details?.resetsAt != null);
+
+  if (isCreditsExhausted) {
     const resetsAt = body?.details?.resetsAt;
     let resetsText = '';
     if (resetsAt) {
@@ -57,13 +60,58 @@ export function formatApiError(err: unknown): { body: ApiErrorResponse; status: 
     };
   }
 
-  // Generic fallback
+  // Specific messages per status — show one clear message per error type
+  let userMessage: string;
+  const statusToUse = status >= 400 ? status : 500;
+
+  switch (statusToUse) {
+    case 400:
+      userMessage = 'The request was invalid. Try changing your search or filters.';
+      break;
+    case 401:
+      userMessage = 'Your API key is missing or invalid. Please check your setup.';
+      break;
+    case 403:
+      userMessage = "You don't have permission to use this feature. Check your plan or API key.";
+      break;
+    case 404:
+      userMessage = "We couldn't find what you're looking for.";
+      break;
+    case 409:
+      userMessage = 'A conflict occurred. Please refresh and try again.';
+      break;
+    case 422:
+      userMessage = 'The request could not be processed. Check your input and try again.';
+      break;
+    case 429:
+      userMessage = 'Too many requests. Please wait a moment and try again.';
+      break;
+    case 500:
+    case 502:
+    case 503:
+    default:
+      if (statusToUse >= 500) {
+        userMessage = "Something went wrong on our side. Please try again in a few minutes.";
+      } else {
+        userMessage = rawMessage;
+      }
+      break;
+  }
+
+  // Connection/network errors (no status from API)
+  if (!(err as { status?: number }).status && err instanceof Error) {
+    const msg = err.message || '';
+    if (msg.includes('fetch') || msg.includes('network') || msg.includes('Connection')) {
+      userMessage = "We couldn't reach the server. Check your connection and try again.";
+    }
+  }
+
   return {
-    status: status >= 400 ? status : 500,
+    status: statusToUse,
     body: {
       error: rawMessage,
-      code,
-      userMessage: status >= 500 ? "Something went wrong on our side. Please try again in a few minutes." : rawMessage,
+      code: body?.code,
+      userMessage,
     },
   };
 }

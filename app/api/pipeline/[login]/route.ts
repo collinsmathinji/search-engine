@@ -7,7 +7,10 @@ export async function PATCH(
 ) {
   try {
     if (!supabase) {
-      return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 });
+      return NextResponse.json({
+        error: 'Supabase not configured',
+        userMessage: 'Saving candidates is not set up. Add your Supabase URL and key in settings to use the pipeline.',
+      }, { status: 503 });
     }
     const { login } = await params;
     const db = supabase;
@@ -23,7 +26,10 @@ export async function PATCH(
     return NextResponse.json(data);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to update candidate';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({
+      error: message,
+      userMessage: "We couldn't update the notes or tags. Please try again.",
+    }, { status: 500 });
   }
 }
 
@@ -33,7 +39,10 @@ export async function DELETE(
 ) {
   try {
     if (!supabase) {
-      return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 });
+      return NextResponse.json({
+        error: 'Supabase not configured',
+        userMessage: 'Saving candidates is not set up. Add your Supabase URL and key in settings to use the pipeline.',
+      }, { status: 503 });
     }
     const { login } = await params;
     const db = supabase;
@@ -42,6 +51,9 @@ export async function DELETE(
     return NextResponse.json({ ok: true });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to remove candidate';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({
+      error: message,
+      userMessage: "We couldn't remove this candidate. Please try again.",
+    }, { status: 500 });
   }
 }

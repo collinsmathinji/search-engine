@@ -11,14 +11,20 @@ export async function GET() {
     return NextResponse.json(data ?? []);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to fetch pipeline';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({
+      error: message,
+      userMessage: "We couldn't load your saved candidates. Please refresh the page.",
+    }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
     if (!supabase) {
-      return NextResponse.json({ error: 'Supabase not configured. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to save candidates.' }, { status: 503 });
+      return NextResponse.json({
+        error: 'Supabase not configured',
+        userMessage: 'Saving candidates is not set up. Add your Supabase URL and key in settings to save developers to your pipeline.',
+      }, { status: 503 });
     }
     const db = supabase;
     const body = await req.json();
@@ -39,7 +45,10 @@ export async function POST(req: NextRequest) {
     } = body;
 
     if (!login || !github_id) {
-      return NextResponse.json({ error: 'login and github_id required' }, { status: 400 });
+      return NextResponse.json({
+        error: 'login and github_id required',
+        userMessage: 'Something went wrong saving this developer. Try again from the search page.',
+      }, { status: 400 });
     }
 
     const { data, error } = await db
@@ -70,6 +79,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(data);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to save candidate';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({
+      error: message,
+      userMessage: "We couldn't save this developer to your pipeline. Please try again.",
+    }, { status: 500 });
   }
 }

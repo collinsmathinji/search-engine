@@ -9,7 +9,10 @@ export async function GET(
   try {
     const { login } = await params;
     if (!login) {
-      return NextResponse.json({ error: 'Missing login' }, { status: 400 });
+      return NextResponse.json({
+        error: 'Missing login',
+        userMessage: 'Please open a developer from the search list.',
+      }, { status: 400 });
     }
 
     const client = getBountylabClient();
@@ -27,7 +30,10 @@ export async function GET(
 
     const user = response.users?.[0] ?? null;
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return NextResponse.json({
+        error: 'User not found',
+        userMessage: "This developer wasn't found. They may have changed their username.",
+      }, { status: 404 });
     }
 
     return NextResponse.json(user);
