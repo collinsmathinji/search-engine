@@ -21,6 +21,7 @@ export async function GET(
       client.rawUsers.byLogin({ logins: [login], includeAttributes });
 
     let response: Awaited<ReturnType<typeof fetchUser>>;
+    let featuresUnavailable: { devrank?: boolean; aggregates?: boolean; contributes?: boolean; followers?: boolean } | undefined;
     try {
       response = await fetchUser({
         aggregates: true,
@@ -33,6 +34,12 @@ export async function GET(
     } catch (firstErr: unknown) {
       if ((firstErr as { status?: number })?.status === 403) {
         response = await fetchUser({});
+        featuresUnavailable = {
+          devrank: true,
+          aggregates: true,
+          contributes: true,
+          followers: true,
+        };
       } else {
         throw firstErr;
       }
@@ -46,7 +53,7 @@ export async function GET(
       }, { status: 404 });
     }
 
-    return NextResponse.json(user);
+    return NextResponse.json(featuresUnavailable ? { ...user, featuresUnavailable } : user);
   } catch (err: unknown) {
     const { body, status } = formatApiError(err);
     return NextResponse.json(body, { status });

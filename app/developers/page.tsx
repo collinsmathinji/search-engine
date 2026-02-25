@@ -4,7 +4,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { DeveloperCard } from '@/components/DeveloperCard';
 import { ScoreWeightsSlider } from '@/components/ScoreWeights';
 import { ApiErrorAlert } from '@/components/ApiErrorAlert';
+import { FeatureUnavailableBanner } from '@/components/FeatureUnavailableBanner';
 import { DEFAULT_SCORE_WEIGHTS, type DeveloperSearchHit, type ScoreWeights } from '@/lib/types';
+import type { DeveloperFeaturesUnavailable } from '@/lib/features-unavailable';
 
 type ViewMode = 'cards' | 'table';
 
@@ -21,6 +23,7 @@ export default function DevelopersPage() {
   const [scoreWeights, setScoreWeights] = useState<ScoreWeights>(DEFAULT_SCORE_WEIGHTS);
   const [savedLogins, setSavedLogins] = useState<Set<string>>(new Set());
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [featuresUnavailable, setFeaturesUnavailable] = useState<DeveloperFeaturesUnavailable | null>(null);
   const [languagesList, setLanguagesList] = useState<string[]>([]);
   const [countriesList, setCountriesList] = useState<string[]>([]);
 
@@ -28,6 +31,7 @@ export default function DevelopersPage() {
     async (cursor?: string) => {
       setLoading(true);
       setErrorData(null);
+      setFeaturesUnavailable(null);
       try {
         const params = new URLSearchParams();
         if (query) params.set('q', query);
@@ -49,6 +53,7 @@ export default function DevelopersPage() {
           setUsers(data.users ?? []);
         }
         setPageInfo(data.pageInfo ?? null);
+        setFeaturesUnavailable(data.featuresUnavailable ?? null);
       } catch (e) {
         setErrorData({ error: e instanceof Error ? e.message : 'Search failed' });
         if (!cursor) setUsers([]);
@@ -235,6 +240,7 @@ export default function DevelopersPage() {
           {errorData && (
             <ApiErrorAlert data={errorData} fallback="Search failed." className="mt-4" />
           )}
+          <FeatureUnavailableBanner kind="developer" features={featuresUnavailable ?? undefined} />
           {saveError && <div className="alert alert--warning">{saveError}</div>}
 
           {loading && users.length === 0 && (

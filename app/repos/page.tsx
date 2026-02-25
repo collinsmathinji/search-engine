@@ -3,7 +3,9 @@
 import { useCallback, useState } from 'react';
 import { RepoCard } from '@/components/RepoCard';
 import { ApiErrorAlert } from '@/components/ApiErrorAlert';
+import { FeatureUnavailableBanner } from '@/components/FeatureUnavailableBanner';
 import type { RepoSearchHit } from '@/lib/types';
+import type { RepoFeaturesUnavailable } from '@/lib/features-unavailable';
 
 export default function ReposPage() {
   const [query, setQuery] = useState('');
@@ -13,12 +15,14 @@ export default function ReposPage() {
   const [repos, setRepos] = useState<RepoSearchHit[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorData, setErrorData] = useState<{ error?: string; userMessage?: string; resetsAt?: string } | null>(null);
+  const [featuresUnavailable, setFeaturesUnavailable] = useState<RepoFeaturesUnavailable | null>(null);
   const [pageInfo, setPageInfo] = useState<{ endCursor?: string; hasNextPage?: boolean } | null>(null);
 
   const search = useCallback(
     async (cursor?: string) => {
       setLoading(true);
       setErrorData(null);
+      setFeaturesUnavailable(null);
       try {
         const params = new URLSearchParams();
         if (query) params.set('q', query);
@@ -40,6 +44,7 @@ export default function ReposPage() {
           setRepos(data.repositories ?? []);
         }
         setPageInfo(data.pageInfo ?? null);
+        setFeaturesUnavailable(data.featuresUnavailable ?? null);
       } catch (e) {
         setErrorData({ error: e instanceof Error ? e.message : 'Search failed' });
         if (!cursor) setRepos([]);
@@ -113,6 +118,7 @@ export default function ReposPage() {
       {errorData && (
         <ApiErrorAlert data={errorData} fallback="Search failed." className="mt-4" />
       )}
+      <FeatureUnavailableBanner kind="repo" features={featuresUnavailable ?? undefined} />
 
       {loading && repos.length === 0 && (
         <div className="text-center text-muted mt-6" style={{ padding: '3rem 0' }}>

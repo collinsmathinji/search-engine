@@ -60,6 +60,12 @@ export async function GET(req: NextRequest) {
           count: response.count,
           users: response.users?.filter(Boolean) ?? [],
           pageInfo: response.pageInfo,
+          featuresUnavailable: {
+            devrank: true,
+            aggregates: true,
+            contributes: true,
+            followers: true,
+          },
         });
       }
       throw firstErr;

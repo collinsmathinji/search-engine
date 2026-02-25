@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ApiErrorAlert } from '@/components/ApiErrorAlert';
+import { FeatureUnavailableBanner } from '@/components/FeatureUnavailableBanner';
+import type { DeveloperFeaturesUnavailable } from '@/lib/features-unavailable';
 
 const GITHUB_AVATAR = (login: string) => `https://github.com/${login}.png`;
 
@@ -38,6 +40,7 @@ interface ProfileUser {
     }>;
   } | null;
   emails?: string[] | null;
+  featuresUnavailable?: DeveloperFeaturesUnavailable;
 }
 
 export default function DeveloperProfilePage() {
@@ -110,6 +113,8 @@ export default function DeveloperProfilePage() {
         ← Back to search
       </Link>
 
+      <FeatureUnavailableBanner kind="developer" features={user.featuresUnavailable} />
+
       <div className="card mt-6">
         <div className="stack stack--md" style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start' }}>
           <img
@@ -138,9 +143,15 @@ export default function DeveloperProfilePage() {
             <div className="cluster mt-5" style={{ flexWrap: 'wrap', gap: 'var(--space-3)' }}>
               <span className="badge badge--accent">
                 DevRank {user.devrank?.devrank ?? '—'}
+                {user.featuresUnavailable?.devrank && (
+                  <span className="text-dim" style={{ fontSize: '0.75rem', fontWeight: 'normal', marginLeft: '0.25rem' }}>(not activated)</span>
+                )}
               </span>
               {user.aggregates?.totalStars != null && (
                 <span className="text-muted" style={{ fontSize: '0.9375rem' }}>★ {user.aggregates.totalStars} total stars</span>
+              )}
+              {user.featuresUnavailable?.aggregates && user.aggregates?.totalStars == null && (
+                <span className="text-dim" style={{ fontSize: '0.875rem' }}>Total stars (not activated)</span>
               )}
               <span className="text-muted" style={{ fontSize: '0.9375rem' }}>Followers {followerCount}</span>
               <span className="text-muted" style={{ fontSize: '0.9375rem' }}>Following {followingCount}</span>

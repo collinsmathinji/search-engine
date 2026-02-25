@@ -55,19 +55,19 @@ export async function GET(req: NextRequest) {
     } catch (firstErr: unknown) {
       if ((firstErr as { status?: number })?.status === 403) {
         const response = await runSearch({});
-        if (naturalLanguage && query) {
-          return NextResponse.json({
-            count: response.count,
-            repositories: response.repositories ?? [],
-            pageInfo: response.pageInfo,
-            searchQuery: (response as { searchQuery?: string }).searchQuery,
-          });
-        }
-        return NextResponse.json({
+        const payload = {
           count: response.count,
           repositories: response.repositories ?? [],
           pageInfo: response.pageInfo,
-        });
+          featuresUnavailable: { contributors: true, owner: true } as const,
+        };
+        if (naturalLanguage && query) {
+          return NextResponse.json({
+            ...payload,
+            searchQuery: (response as { searchQuery?: string }).searchQuery,
+          });
+        }
+        return NextResponse.json(payload);
       }
       throw firstErr;
     }
