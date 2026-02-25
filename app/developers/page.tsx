@@ -69,12 +69,12 @@ export default function DevelopersPage() {
 
   useEffect(() => {
     Promise.all([
-      import('@/lib/languages').then((m) => m.LANGUAGES),
-      import('@/lib/countries').then((m) => m.COUNTRIES),
+      fetch('/data/languages.json').then((r) => r.json() as Promise<string[]>),
+      fetch('/data/countries.json').then((r) => r.json() as Promise<string[]>),
     ]).then(([langs, countries]) => {
-      setLanguagesList([...langs]);
-      setCountriesList([...countries]);
-    });
+      setLanguagesList(langs ?? []);
+      setCountriesList(countries ?? []);
+    }).catch(() => {});
   }, []);
 
   const handleSave = useCallback(async (user: DeveloperSearchHit) => {
