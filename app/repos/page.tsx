@@ -26,7 +26,7 @@ export default function ReposPage() {
         if (language) params.set('language', language);
         if (minStars) params.set('minStars', minStars);
         if (cursor) params.set('after', cursor);
-        params.set('maxResults', '20');
+        params.set('maxResults', '10');
         const res = await fetch(`/api/repos/search?${params}`);
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {

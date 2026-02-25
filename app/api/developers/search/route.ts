@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
     const location = searchParams.get('location') || undefined;
     const emailDomain = searchParams.get('emailDomain') || undefined;
     const after = searchParams.get('after') || undefined;
-    const maxResults = Math.min(parseInt(searchParams.get('maxResults') || '20', 10), 100);
+    const maxResults = Math.min(parseInt(searchParams.get('maxResults') || '10', 10), 100);
 
     const client = getBountylabClient();
 

@@ -35,7 +35,7 @@ export default function DevelopersPage() {
         if (location) params.set('location', location);
         if (emailDomain) params.set('emailDomain', emailDomain);
         if (cursor) params.set('after', cursor);
-        params.set('maxResults', '20');
+        params.set('maxResults', '10');
         const res = await fetch(`/api/developers/search?${params}`);
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
