@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getBountylabClient, isDevRankEnabled } from '@/lib/bountylab';
+import { getBountylabClient } from '@/lib/bountylab';
 
 export async function GET(
   _req: NextRequest,
@@ -16,7 +16,7 @@ export async function GET(
       logins: [login],
       includeAttributes: {
         aggregates: true,
-        ...(isDevRankEnabled() && { devrank: true }),
+        devrank: true,
         contributes: { first: 10 },
         followers: { first: 1 },
         owns: { first: 10 },

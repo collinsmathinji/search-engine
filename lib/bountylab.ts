@@ -8,12 +8,6 @@ function getApiKey(): string {
   return key;
 }
 
-/** Set BOUNTYLAB_DEVRANK_ENABLED=true only if your BountyLab account has the DEVRANK service (otherwise you get 403). */
-export function isDevRankEnabled(): boolean {
-  const v = process.env.BOUNTYLAB_DEVRANK_ENABLED;
-  return v === 'true' || v === '1';
-}
-
 export function getBountylabClient(): Bountylab {
   return new Bountylab({ apiKey: getApiKey() });
 }

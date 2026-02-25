@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getBountylabClient, isDevRankEnabled } from '@/lib/bountylab';
+import { getBountylabClient } from '@/lib/bountylab';
 
 export async function GET(req: NextRequest) {
   try {
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
       enablePagination: true,
       includeAttributes: {
         aggregates: true,
-        ...(isDevRankEnabled() && { devrank: true }),
+        devrank: true,
         contributes: { first: 5 },
         followers: { first: 1 },
       },
