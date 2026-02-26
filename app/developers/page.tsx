@@ -76,13 +76,6 @@ export default function DevelopersPage() {
     }
   }, []);
 
-  useEffect(() => {
-    fetch('/data/languages.json')
-      .then((r) => r.json() as Promise<string[]>)
-      .then((langs) => setLanguagesList(langs ?? []))
-      .catch(() => {});
-  }, []);
-
   const handleSave = useCallback(async (user: DeveloperSearchHit) => {
     setSaveError(null);
     const next = new Set(savedLogins);
@@ -186,7 +179,7 @@ export default function DevelopersPage() {
                   style={{ minWidth: '11rem' }}
                 >
                   <option value="">All languages</option>
-                  {languagesList.map((lang) => (
+                  {LANGUAGES.map((lang) => (
                     <option key={lang} value={lang}>
                       {lang}
                     </option>
