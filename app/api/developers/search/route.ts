@@ -3,7 +3,6 @@ import { getBountylabClient } from '@/lib/bountylab';
 import { formatApiError } from '@/lib/api-error';
 
 // BountyLab docs: https://docs.bountylab.io/guides/searching/
-// For location/country/emails/bio use ContainsAllTokens (FTS); for language use Eq.
 type FilterOp = 'Eq' | 'NotEq' | 'In' | 'NotIn' | 'Lt' | 'Lte' | 'Gt' | 'Gte' | 'ContainsAllTokens';
 
 function buildFilters(language?: string, location?: string, emailDomain?: string) {
@@ -11,16 +10,26 @@ function buildFilters(language?: string, location?: string, emailDomain?: string
   if (language) {
     filters.push({ field: 'primaryLanguage', op: 'Eq', value: language });
   }
-  // resolvedCountry: use ContainsAllTokens so "United States", "Canada", etc. match variations
+  // Country: per docs use ContainsAllTokens for location fields; we also post-filter so only matching country is returned
   if (location) {
     filters.push({ field: 'resolvedCountry', op: 'ContainsAllTokens', value: location.trim() });
   }
-  // emails: use ContainsAllTokens with @domain (e.g. @openai.com) per docs
   if (emailDomain) {
     const value = emailDomain.trim().startsWith('@') ? emailDomain.trim() : `@${emailDomain.trim()}`;
     filters.push({ field: 'emails', op: 'ContainsAllTokens', value });
   }
   return filters;
+}
+
+/** Match user to selected country by resolvedCountry or raw location (case-insensitive). */
+function userMatchesCountry(
+  user: { resolvedCountry?: string | null; location?: string | null },
+  country: string
+): boolean {
+  const c = country.toLowerCase().trim();
+  const resolved = (user.resolvedCountry ?? '').toLowerCase();
+  const loc = (user.location ?? '').toLowerCase();
+  return resolved.includes(c) || loc.includes(c) || resolved === c || loc === c;
 }
 
 export async function GET(req: NextRequest) {
@@ -74,9 +83,10 @@ export async function GET(req: NextRequest) {
           ...baseParams,
           includeAttributes: {},
         });
+        const users = applyCountryFilter(response.users);
         return NextResponse.json({
-          count: response.count,
-          users: response.users?.filter(Boolean) ?? [],
+          count: users.length,
+          users,
           pageInfo: response.pageInfo,
           featuresUnavailable: {
             devrank: true,

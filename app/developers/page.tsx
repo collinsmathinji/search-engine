@@ -9,6 +9,7 @@ import { getDevRankScore } from '@/lib/devrank';
 import { DEFAULT_SCORE_WEIGHTS, type DeveloperSearchHit, type ScoreWeights } from '@/lib/types';
 import type { DeveloperFeaturesUnavailable } from '@/lib/features-unavailable';
 import { pipelineOwnerHeaders } from '@/lib/pipeline-owner-client';
+import { COUNTRIES } from '@/lib/countries';
 
 type ViewMode = 'cards' | 'table';
 
@@ -27,7 +28,6 @@ export default function DevelopersPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [featuresUnavailable, setFeaturesUnavailable] = useState<DeveloperFeaturesUnavailable | null>(null);
   const [languagesList, setLanguagesList] = useState<string[]>([]);
-  const [countriesList, setCountriesList] = useState<string[]>([]);
 
   const search = useCallback(
     async (cursor?: string) => {
@@ -77,13 +77,10 @@ export default function DevelopersPage() {
   }, []);
 
   useEffect(() => {
-    Promise.all([
-      fetch('/data/languages.json').then((r) => r.json() as Promise<string[]>),
-      fetch('/data/countries.json').then((r) => r.json() as Promise<string[]>),
-    ]).then(([langs, countries]) => {
-      setLanguagesList(langs ?? []);
-      setCountriesList(countries ?? []);
-    }).catch(() => {});
+    fetch('/data/languages.json')
+      .then((r) => r.json() as Promise<string[]>)
+      .then((langs) => setLanguagesList(langs ?? []))
+      .catch(() => {});
   }, []);
 
   const handleSave = useCallback(async (user: DeveloperSearchHit) => {
@@ -203,7 +200,7 @@ export default function DevelopersPage() {
                   style={{ minWidth: '11rem' }}
                 >
                   <option value="">All countries</option>
-                  {countriesList.map((country) => (
+                  {COUNTRIES.map((country) => (
                     <option key={country} value={country}>
                       {country}
                     </option>
