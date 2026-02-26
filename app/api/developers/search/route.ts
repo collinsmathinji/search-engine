@@ -52,10 +52,12 @@ export async function GET(req: NextRequest) {
       ...(filters.length > 0 && { filters: { filters, op: 'And' as const } }),
     };
 
-    const applyCountryFilter = (users: Array<{ resolvedCountry?: string | null; location?: string | null }> | undefined) => {
-      const list = users?.filter(Boolean) ?? [];
+    const applyCountryFilter = (users: unknown): unknown[] => {
+      const list = Array.isArray(users) ? users.filter(Boolean) : [];
       if (!location?.trim()) return list;
-      return list.filter((u) => userMatchesCountry(u, location));
+      return list.filter((u): u is Record<string, unknown> =>
+        typeof u === 'object' && u !== null && userMatchesCountry(u as { resolvedCountry?: string | null; location?: string | null }, location)
+      );
     };
 
     // Try full search first (devrank, aggregates, contributes, followers)
