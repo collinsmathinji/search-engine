@@ -50,6 +50,13 @@ export async function GET(req: NextRequest) {
       });
     } catch (firstErr: unknown) {
       const status = (firstErr as { status?: number })?.status;
+      const errBody = (firstErr as { error?: unknown })?.error;
+      const errMessage = firstErr instanceof Error ? firstErr.message : String(firstErr);
+      console.warn('[API developers/search] Enriched search failed (DevRank/aggregates/contributes/followers):', {
+        status,
+        message: errMessage,
+        backendError: errBody,
+      });
       // If restricted (e.g. 403 — DevRank or enrichments not on plan), run basic search without them
       if (status === 403) {
         const response = await client.searchUsers.search({
@@ -72,6 +79,7 @@ export async function GET(req: NextRequest) {
     }
   } catch (err: unknown) {
     const { body, status } = formatApiError(err);
+    console.error('[API developers/search] Request failed:', { status, body, raw: err });
     return NextResponse.json(body, { status });
   }
 }

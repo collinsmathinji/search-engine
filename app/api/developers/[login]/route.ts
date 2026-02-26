@@ -32,7 +32,16 @@ export async function GET(
         stars: { first: 5 },
       });
     } catch (firstErr: unknown) {
-      if ((firstErr as { status?: number })?.status === 403) {
+      const status = (firstErr as { status?: number })?.status;
+      const errBody = (firstErr as { error?: unknown })?.error;
+      const errMessage = firstErr instanceof Error ? firstErr.message : String(firstErr);
+      console.warn('[API developers/[login]] Enriched profile failed (DevRank/aggregates/contributes/followers):', {
+        login,
+        status,
+        message: errMessage,
+        backendError: errBody,
+      });
+      if (status === 403) {
         response = await fetchUser({});
         featuresUnavailable = {
           devrank: true,
@@ -56,6 +65,7 @@ export async function GET(
     return NextResponse.json(featuresUnavailable ? { ...user, featuresUnavailable } : user);
   } catch (err: unknown) {
     const { body, status } = formatApiError(err);
+    console.error('[API developers/[login]] Request failed:', { status, body, raw: err });
     return NextResponse.json(body, { status });
   }
 }

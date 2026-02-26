@@ -53,7 +53,15 @@ export async function GET(req: NextRequest) {
         pageInfo: response.pageInfo,
       });
     } catch (firstErr: unknown) {
-      if ((firstErr as { status?: number })?.status === 403) {
+      const status = (firstErr as { status?: number })?.status;
+      const errBody = (firstErr as { error?: unknown })?.error;
+      const errMessage = firstErr instanceof Error ? firstErr.message : String(firstErr);
+      console.warn('[API repos/search] Enriched search failed (contributors/owner):', {
+        status,
+        message: errMessage,
+        backendError: errBody,
+      });
+      if (status === 403) {
         const response = await runSearch({});
         const payload = {
           count: response.count,
@@ -73,6 +81,7 @@ export async function GET(req: NextRequest) {
     }
   } catch (err: unknown) {
     const { body, status } = formatApiError(err);
+    console.error('[API repos/search] Request failed:', { status, body, raw: err });
     return NextResponse.json(body, { status });
   }
 }
