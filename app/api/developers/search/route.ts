@@ -52,6 +52,12 @@ export async function GET(req: NextRequest) {
       ...(filters.length > 0 && { filters: { filters, op: 'And' as const } }),
     };
 
+    const applyCountryFilter = (users: Array<{ resolvedCountry?: string | null; location?: string | null }> | undefined) => {
+      const list = users?.filter(Boolean) ?? [];
+      if (!location?.trim()) return list;
+      return list.filter((u) => userMatchesCountry(u, location));
+    };
+
     // Try full search first (devrank, aggregates, contributes, followers)
     try {
       const response = await client.searchUsers.search({
@@ -63,9 +69,10 @@ export async function GET(req: NextRequest) {
           followers: { first: 1 },
         },
       });
+      const users = applyCountryFilter(response.users);
       return NextResponse.json({
-        count: response.count,
-        users: response.users?.filter(Boolean) ?? [],
+        count: users.length,
+        users,
         pageInfo: response.pageInfo,
       });
     } catch (firstErr: unknown) {
