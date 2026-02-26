@@ -32,6 +32,22 @@ function userMatchesCountry(
   return resolved.includes(c) || loc.includes(c) || resolved === c || loc === c;
 }
 
+/** Match user to selected language by primaryLanguage or contributes.edges[].language (case-insensitive exact). */
+function userMatchesLanguage(
+  user: {
+    primaryLanguage?: string | null;
+    contributes?: { edges?: Array<{ language?: string | null }> } | null;
+  },
+  lang: string
+): boolean {
+  const L = lang.toLowerCase().trim();
+  if (!L) return true;
+  const primary = (user.primaryLanguage ?? '').toLowerCase();
+  if (primary === L) return true;
+  const edges = user.contributes?.edges ?? [];
+  return edges.some((e) => (e.language ?? '').toLowerCase() === L);
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -52,12 +68,26 @@ export async function GET(req: NextRequest) {
       ...(filters.length > 0 && { filters: { filters, op: 'And' as const } }),
     };
 
-    const applyCountryFilter = (users: unknown): unknown[] => {
-      const list = Array.isArray(users) ? users.filter(Boolean) : [];
-      if (!location?.trim()) return list;
-      return list.filter((u): u is Record<string, unknown> =>
-        typeof u === 'object' && u !== null && userMatchesCountry(u as { resolvedCountry?: string | null; location?: string | null }, location)
-      );
+    type UserLike = Record<string, unknown> & {
+      resolvedCountry?: string | null;
+      location?: string | null;
+      primaryLanguage?: string | null;
+      contributes?: { edges?: Array<{ language?: string | null }> } | null;
+    };
+
+    const applyPostFilters = (users: unknown): unknown[] => {
+      let list = Array.isArray(users) ? users.filter(Boolean) : [];
+      if (location?.trim()) {
+        list = list.filter((u): u is UserLike =>
+          typeof u === 'object' && u !== null && userMatchesCountry(u as UserLike, location)
+        );
+      }
+      if (language?.trim()) {
+        list = list.filter((u): u is UserLike =>
+          typeof u === 'object' && u !== null && userMatchesLanguage(u as UserLike, language)
+        );
+      }
+      return list;
     };
 
     // Try full search first (devrank, aggregates, contributes, followers)
@@ -71,7 +101,7 @@ export async function GET(req: NextRequest) {
           followers: { first: 1 },
         },
       });
-      const users = applyCountryFilter(response.users);
+      const users = applyPostFilters(response.users);
       return NextResponse.json({
         count: users.length,
         users,
@@ -92,7 +122,7 @@ export async function GET(req: NextRequest) {
           ...baseParams,
           includeAttributes: {},
         });
-        const users = applyCountryFilter(response.users);
+        const users = applyPostFilters(response.users);
         return NextResponse.json({
           count: users.length,
           users,

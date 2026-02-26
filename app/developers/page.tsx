@@ -10,6 +10,7 @@ import { DEFAULT_SCORE_WEIGHTS, type DeveloperSearchHit, type ScoreWeights } fro
 import type { DeveloperFeaturesUnavailable } from '@/lib/features-unavailable';
 import { pipelineOwnerHeaders } from '@/lib/pipeline-owner-client';
 import { COUNTRIES } from '@/lib/countries';
+import { LANGUAGES } from '@/lib/languages';
 
 type ViewMode = 'cards' | 'table';
 
@@ -27,7 +28,6 @@ export default function DevelopersPage() {
   const [savedLogins, setSavedLogins] = useState<Set<string>>(new Set());
   const [saveError, setSaveError] = useState<string | null>(null);
   const [featuresUnavailable, setFeaturesUnavailable] = useState<DeveloperFeaturesUnavailable | null>(null);
-  const [languagesList, setLanguagesList] = useState<string[]>([]);
 
   const search = useCallback(
     async (cursor?: string) => {
