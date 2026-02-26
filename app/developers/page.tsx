@@ -5,6 +5,7 @@ import { DeveloperCard } from '@/components/DeveloperCard';
 import { ScoreWeightsSlider } from '@/components/ScoreWeights';
 import { ApiErrorAlert } from '@/components/ApiErrorAlert';
 import { FeatureUnavailableBanner } from '@/components/FeatureUnavailableBanner';
+import { getDevRankScore } from '@/lib/devrank';
 import { DEFAULT_SCORE_WEIGHTS, type DeveloperSearchHit, type ScoreWeights } from '@/lib/types';
 import type { DeveloperFeaturesUnavailable } from '@/lib/features-unavailable';
 import { pipelineOwnerHeaders } from '@/lib/pipeline-owner-client';
@@ -104,7 +105,7 @@ export default function DevelopersPage() {
           company: user.company ?? null,
           location: user.location ?? null,
           top_languages: user.contributes?.edges?.map((e) => e.language).filter(Boolean) ?? [],
-          devrank_score: user.devrank?.devrank ?? null,
+          devrank_score: getDevRankScore(user.devrank) ?? null,
           follower_count: user.followers?.pageInfo?.totalCount ?? null,
           total_stars: user.aggregates?.totalStars ?? null,
           notes: null,
@@ -140,11 +141,11 @@ export default function DevelopersPage() {
   };
 
   const sorted = [...users].sort((a, b) => {
-    const sa = scoreWeights.devrank * ((a.devrank?.devrank ?? 0) / 100) +
+    const sa = scoreWeights.devrank * ((getDevRankScore(a.devrank) ?? 0) / 100) +
       scoreWeights.stars * Math.min((a.aggregates?.totalStars ?? 0) / 5000, 1) +
       scoreWeights.activity * Math.min((a.contributes?.pageInfo?.totalCount ?? 0) / 50, 1) +
       scoreWeights.followers * Math.min((a.followers?.pageInfo?.totalCount ?? 0) / 500, 1);
-    const sb = scoreWeights.devrank * ((b.devrank?.devrank ?? 0) / 100) +
+    const sb = scoreWeights.devrank * ((getDevRankScore(b.devrank) ?? 0) / 100) +
       scoreWeights.stars * Math.min((b.aggregates?.totalStars ?? 0) / 5000, 1) +
       scoreWeights.activity * Math.min((b.contributes?.pageInfo?.totalCount ?? 0) / 50, 1) +
       scoreWeights.followers * Math.min((b.followers?.pageInfo?.totalCount ?? 0) / 500, 1);
@@ -303,7 +304,7 @@ export default function DevelopersPage() {
                       </td>
                       <td className="text-muted">{user.company ?? '—'}</td>
                       <td className="text-muted">{user.location ?? '—'}</td>
-                      <td>{user.devrank?.devrank ?? '—'}</td>
+                      <td>{getDevRankScore(user.devrank) ?? '—'}</td>
                       <td>{user.aggregates?.totalStars ?? '—'}</td>
                       <td>
                         <a href={`https://github.com/${user.login}`} target="_blank" rel="noopener noreferrer">

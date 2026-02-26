@@ -2,12 +2,14 @@
 
 import Link from 'next/link';
 import type { DeveloperSearchHit } from '@/lib/types';
+import { getDevRankScore, getDevRankTier } from '@/lib/devrank';
 import { ScoreWeights } from './ScoreWeights';
 
 const GITHUB_AVATAR = (login: string) => `https://github.com/${login}.png`;
 
 function compositeScore(user: DeveloperSearchHit, weights: ScoreWeights): number {
-  const devrank = (user.devrank?.devrank ?? 0) / 100;
+  const score = getDevRankScore(user.devrank);
+  const devrank = (score ?? 0) / 100;
   const stars = Math.min(((user.aggregates?.totalStars ?? 0) / 5000), 1);
   const activity = user.contributes?.pageInfo?.totalCount ? Math.min(user.contributes.pageInfo.totalCount / 50, 1) : 0;
   const followers = user.followers?.pageInfo?.totalCount ? Math.min(user.followers.pageInfo.totalCount / 500, 1) : 0;
@@ -72,8 +74,11 @@ export function DeveloperCard({ user, scoreWeights, isSaved, onSave, onRemove }:
             )}
           </div>
           <div className="cluster mt-3" style={{ flexWrap: 'wrap', gap: 'var(--space-3)', fontSize: '0.75rem' }}>
-            {user.devrank?.devrank != null && (
-              <span className="badge badge--accent">DevRank {user.devrank.devrank}</span>
+            {getDevRankScore(user.devrank) != null && (
+              <span className="badge badge--accent">
+                DevRank {getDevRankScore(user.devrank)}
+                {getDevRankTier(user.devrank) && ` · ${getDevRankTier(user.devrank)}`}
+              </span>
             )}
             {user.aggregates?.totalStars != null && (
               <span className="text-muted">★ {user.aggregates.totalStars}</span>

@@ -1,4 +1,16 @@
 // Shared types for API responses and UI
+// DevRank: https://docs.bountylab.io/ — crackedScore 0-100, tier (Elite|Expert|Advanced|Intermediate|Developing)
+
+export interface DevRankData {
+  /** Main metric 0-100 (bell curve, mean 50). Documented as crackedScore. */
+  crackedScore?: number;
+  /** Legacy field; prefer crackedScore. */
+  devrank?: number;
+  /** Elite | Expert | Advanced | Intermediate | Developing */
+  tier?: string;
+  trust?: number;
+  pc?: number;
+}
 
 export interface DeveloperSearchHit {
   id: string;
@@ -11,7 +23,7 @@ export interface DeveloperSearchHit {
   resolvedCountry?: string | null;
   resolvedCity?: string | null;
   score?: number;
-  devrank?: { devrank?: number } | null;
+  devrank?: DevRankData | null;
   aggregates?: { totalStars?: number } | null;
   contributes?: { edges?: Array<{ language?: string | null }>; pageInfo?: { totalCount?: number } } | null;
   followers?: { pageInfo?: { totalCount?: number } } | null;

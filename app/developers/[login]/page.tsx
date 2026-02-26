@@ -6,6 +6,8 @@ import { useParams } from 'next/navigation';
 import { ApiErrorAlert } from '@/components/ApiErrorAlert';
 import { FeatureUnavailableBanner } from '@/components/FeatureUnavailableBanner';
 import type { DeveloperFeaturesUnavailable } from '@/lib/features-unavailable';
+import { getDevRankScore, getDevRankTier } from '@/lib/devrank';
+import type { DevRankData } from '@/lib/types';
 
 const GITHUB_AVATAR = (login: string) => `https://github.com/${login}.png`;
 
@@ -18,7 +20,7 @@ interface ProfileUser {
   company?: string | null;
   location?: string | null;
   websiteUrl?: string | null;
-  devrank?: { devrank?: number } | null;
+  devrank?: DevRankData | null;
   aggregates?: { totalStars?: number } | null;
   contributes?: {
     edges?: Array<{
@@ -142,7 +144,8 @@ export default function DeveloperProfilePage() {
             </div>
             <div className="cluster mt-5" style={{ flexWrap: 'wrap', gap: 'var(--space-3)' }}>
               <span className="badge badge--accent">
-                DevRank {user.devrank?.devrank ?? '—'}
+                DevRank {getDevRankScore(user.devrank) ?? '—'}
+                {getDevRankTier(user.devrank) && ` · ${getDevRankTier(user.devrank)}`}
                 {user.featuresUnavailable?.devrank && (
                   <span className="text-dim" style={{ fontSize: '0.75rem', fontWeight: 'normal', marginLeft: '0.25rem' }}>(not activated)</span>
                 )}
